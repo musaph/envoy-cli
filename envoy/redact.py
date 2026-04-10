@@ -70,3 +70,11 @@ class EnvRedactor:
         total = len(results)
         redacted = sum(1 for r in results if r.was_redacted)
         return f"{redacted}/{total} variable(s) redacted."
+
+    def redacted_keys(self, vars: Dict[str, str]) -> List[str]:
+        """Return a sorted list of keys whose values were redacted.
+
+        Useful for auditing or displaying which variables are considered
+        sensitive without revealing any of their values.
+        """
+        return sorted(rv.key for rv in self.redact(vars) if rv.was_redacted)
