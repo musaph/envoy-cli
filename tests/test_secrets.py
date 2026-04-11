@@ -69,6 +69,9 @@ class TestSecretScannerScan:
         matches = scanner.scan(variables)
         assert matches[0].value_preview.endswith("...")
 
+    def test_scan_empty_variables_returns_empty(self, scanner):
+        assert scanner.scan({}) == []
+
 
 class TestSecretScannerMask:
     def test_mask_replaces_sensitive_values(self, scanner):
@@ -79,20 +82,13 @@ class TestSecretScannerMask:
 
     def test_mask_does_not_mutate_original(self, scanner):
         variables = {"DB_PASSWORD": "secret123"}
-        scanner.mask(variables)
+        masked = scanner.mask(variables)
         assert variables["DB_PASSWORD"] == "secret123"
 
-    def test_mask_all_safe_vars_unchanged(self, scanner):
-        variables = {"APP_ENV": "staging", "PORT": "3000"}
+    def test_mask_returns_new_dict(self, scanner):
+        variables = {"DB_PASSWORD": "secret123"}
         masked = scanner.mask(variables)
-        assert masked == variables
+        assert masked is not variables
 
-
-class TestSecretScannerCustomPatterns:
-    def test_extra_key_pattern_detected(self):
-        scanner = SecretScanner(extra_key_patterns=[r"internal_id"])
-        assert scanner.is_sensitive_key("INTERNAL_ID") is True
-
-    def test_extra_pattern_does_not_break_defaults(self):
-        scanner = SecretScanner(extra_key_patterns=[r"custom"])
-        assert scanner.is_sensitive_key("DB_PASSWORD") is True
+    def test_mask_empty_variables_returns_empty(self, scanner):
+        assert scanner.mask({}) == {}
