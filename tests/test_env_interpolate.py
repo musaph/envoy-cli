@@ -82,3 +82,13 @@ class TestEnvInterpolator:
         result = interp.interpolate({})
         assert result.resolved == {}
         assert result.is_clean
+
+    def test_context_only_value_not_in_resolved(self, interp):
+        """Keys present only in context should not appear in resolved output."""
+        result = interp.interpolate(
+            {"GREETING": "Hello, ${NAME}!"},
+            context={"NAME": "World"},
+        )
+        assert result.resolved["GREETING"] == "Hello, World!"
+        assert "NAME" not in result.resolved
+        assert result.is_clean
