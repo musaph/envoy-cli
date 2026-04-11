@@ -45,6 +45,15 @@ class EnvAliasManager:
             self._alias_map[alias] = canonical
         return entry
 
+    def unregister(self, canonical: str) -> bool:
+        """Remove a canonical entry and all its aliases. Returns True if found."""
+        entry = self._entries.pop(canonical, None)
+        if entry is None:
+            return False
+        for alias in entry.aliases:
+            self._alias_map.pop(alias, None)
+        return True
+
     def resolve(self, key: str) -> Optional[str]:
         """Return canonical key for a given alias, or None if not found."""
         if key in self._entries:
