@@ -28,6 +28,19 @@ def register_compress_subcommands(subparsers: argparse._SubParsersAction) -> Non
     stats_p.add_argument("file", help="Path to .env file")
 
 
+def _resolve_source(path_str: str, out) -> tuple[Path | None, int]:
+    """Resolve and validate a source file path.
+
+    Returns a tuple of (Path, exit_code). If the file does not exist,
+    logs an error via ``out``, sets Path to None, and exit_code to 1.
+    """
+    src = Path(path_str)
+    if not src.exists():
+        out(f"Error: file not found: {src}")
+        return None, 1
+    return src, 0
+
+
 def handle_compress_command(args: argparse.Namespace, out=print) -> int:
     cmd = getattr(args, "compress_cmd", None)
     if not cmd:
@@ -37,10 +50,9 @@ def handle_compress_command(args: argparse.Namespace, out=print) -> int:
     compressor = EnvCompressor(level=getattr(args, "level", 6))
 
     if cmd == "pack":
-        src = Path(args.file)
-        if not src.exists():
-            out(f"Error: file not found: {src}")
-            return 1
+        src, code = _resolve_source(args.file, out)
+        if code:
+            return code
         raw = src.read_bytes()
         compressed = compressor.compress(raw)
         dest = Path(args.output) if args.output else src.with_suffix(".env.zz")
@@ -50,10 +62,9 @@ def handle_compress_command(args: argparse.Namespace, out=print) -> int:
         return 0
 
     if cmd == "unpack":
-        src = Path(args.file)
-        if not src.exists():
-            out(f"Error: file not found: {src}")
-            return 1
+        src, code = _resolve_source(args.file, out)
+        if code:
+            return code
         compressed = src.read_bytes()
         try:
             raw = compressor.decompress(compressed)
@@ -66,10 +77,9 @@ def handle_compress_command(args: argparse.Namespace, out=print) -> int:
         return 0
 
     if cmd == "stats":
-        src = Path(args.file)
-        if not src.exists():
-            out(f"Error: file not found: {src}")
-            return 1
+        src, code = _resolve_source(args.file, out)
+        if code:
+            return code
         raw = src.read_bytes()
         compressed = compressor.compress(raw)
         stats = compressor.stats(raw, compressed)
