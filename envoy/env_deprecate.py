@@ -54,6 +54,16 @@ class EnvDeprecationChecker:
     def register(self, key: str, reason: str, replacement: Optional[str] = None) -> None:
         self._entries[key] = DeprecationEntry(key=key, reason=reason, replacement=replacement)
 
+    def unregister(self, key: str) -> bool:
+        """Remove a deprecation entry by key.
+
+        Returns True if the entry was found and removed, False otherwise.
+        """
+        if key in self._entries:
+            del self._entries[key]
+            return True
+        return False
+
     def check(self, vars: Dict[str, str]) -> DeprecationResult:
         present = [
             self._entries[k]
