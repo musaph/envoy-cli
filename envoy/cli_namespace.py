@@ -25,21 +25,35 @@ def register_namespace_subcommands(subparsers: Any) -> None:
     p_remove.add_argument("namespace", help="Namespace prefix to remove")
 
 
+def _read_env_file(path: str, out) -> tuple:
+    """Read and parse a .env file, returning (vars_dict, error_code).
+
+    Returns (parsed_vars, 0) on success, or (None, error_code) on failure.
+    """
+    try:
+        with open(path, "r") as fh:
+            content = fh.read()
+    except FileNotFoundError:
+        out(f"Error: file not found: {path}")
+        return None, 2
+    except OSError as exc:
+        out(f"Error: could not read file '{path}': {exc}")
+        return None, 2
+
+    parser = EnvParser()
+    return parser.parse(content), 0
+
+
 def handle_namespace_command(args: Any, out=print) -> int:
     if not hasattr(args, "ns_cmd") or args.ns_cmd is None:
         out("Usage: envoy namespace <list|extract|remove> [options]")
         return 1
 
-    try:
-        with open(args.file, "r") as fh:
-            content = fh.read()
-    except FileNotFoundError:
-        out(f"Error: file not found: {args.file}")
-        return 2
+    vars_, err = _read_env_file(args.file, out)
+    if err:
+        return err
 
-    parser = EnvParser()
     manager = EnvNamespaceManager()
-    vars_ = parser.parse(content)
 
     if args.ns_cmd == "list":
         namespaces = manager.list_namespaces(vars_)
