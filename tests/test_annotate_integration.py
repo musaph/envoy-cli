@@ -54,3 +54,13 @@ class TestAnnotatorWithParser:
         result = annotator.apply(vars_)
         assert len(result.annotated) == len(vars_)
         assert result.unknown_keys == []
+
+    def test_unannotated_vars_not_in_annotated(self, parser, annotator):
+        """Variables present in the env but not annotated should not appear
+        in result.annotated, ensuring apply() only surfaces explicit annotations."""
+        vars_ = parser.parse(RAW_ENV)
+        annotator.annotate("DB_HOST", "Hostname for the database")
+        result = annotator.apply(vars_)
+        unannotated_keys = [k for k in vars_ if k != "DB_HOST"]
+        for key in unannotated_keys:
+            assert key not in result.annotated
