@@ -27,6 +27,14 @@ def clean_env_file(tmp_path):
 
 
 @pytest.fixture
+def crlf_env_file(tmp_path):
+    """An env file with Windows-style CRLF line endings."""
+    f = tmp_path / ".env"
+    f.write_bytes(b"KEY=hello\r\nCLEAN=ok\r\n")
+    return str(f)
+
+
+@pytest.fixture
 def _out():
     lines = []
     return lines, lines.append
@@ -81,3 +89,21 @@ def test_no_strip_quotes_leaves_quoted_values(env_file, _out):
     assert rc == 0
     content = open(env_file).read()
     assert '"hello"' in content
+
+
+def test_fix_line_endings_converts_crlf(crlf_env_file, _out):
+    """CRLF line endings should be converted to LF by default."""
+    lines, out = _out
+    rc = handle_normalize_command(Args(file=crlf_env_file), out=out)
+    assert rc == 0
+    content = open(crlf_env_file, "rb").read()
+    assert b"\r\n" not in content
+
+
+def test_no_fix_line_endings_preserves_crlf(crlf_env_file, _out):
+    """With --no-fix-line-endings, CRLF line endings should be left intact."""
+    lines, out = _out
+    rc = handle_normalize_command(Args(file=crlf_env_file, no_fix_line_endings=True), out=out)
+    assert rc == 0
+    content = open(crlf_env_file, "rb").read()
+    assert b"\r\n" in content
