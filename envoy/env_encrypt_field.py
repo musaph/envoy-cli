@@ -84,6 +84,10 @@ class EnvFieldEncryptor:
 
         return FieldEncryptResult(encrypted=decrypted, skipped=skipped, errors=errors)
 
+    def encrypted_keys(self, vars: Dict[str, str]) -> List[str]:
+        """Return a list of keys whose values are currently encrypted."""
+        return [k for k, v in vars.items() if self.is_encrypted(v)]
+
     @staticmethod
     def is_encrypted(value: str) -> bool:
         return value.startswith(ENCRYPTED_PREFIX)
