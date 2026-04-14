@@ -57,6 +57,10 @@ class EnvCoercer:
         result: Dict[str, str] = {}
 
         for key, value in vars_.items():
+            if not isinstance(value, str):
+                skipped.append(key)
+                result[key] = value
+                continue
             current = value
             changed = False
             applied_rule = ""
@@ -80,3 +84,8 @@ class EnvCoercer:
         for rule_name in self.rules:
             current = self.RULES[rule_name](current)
         return current
+
+    @classmethod
+    def available_rules(cls) -> List[str]:
+        """Return the list of available coercion rule names."""
+        return list(cls.RULES.keys())
