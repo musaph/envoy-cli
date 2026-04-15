@@ -21,6 +21,17 @@ class MergeResult:
     def has_conflicts(self) -> bool:
         return bool(self.conflicts)
 
+    def resolve_conflict(self, key: str, value: str) -> None:
+        """Resolve a single conflict by assigning a chosen value.
+
+        Moves the key from conflicts into merged with the provided value.
+        Raises KeyError if the key is not currently tracked as a conflict.
+        """
+        if key not in self.conflicts:
+            raise KeyError(f"No conflict recorded for key: {key!r}")
+        self.merged[key] = value
+        del self.conflicts[key]
+
     def __repr__(self) -> str:
         return (
             f"MergeResult(merged={len(self.merged)}, "
