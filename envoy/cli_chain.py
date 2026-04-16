@@ -29,19 +29,31 @@ def handle_chain_command(args: argparse.Namespace, out: Callable[[str], None] = 
     return 1
 
 
-def _run_merge(args: argparse.Namespace, out: Callable[[str], None]) -> int:
-    parser = EnvParser()
-    chainer = EnvChainer()
+def _load_sources(
+    files: list[str],
+    parser: EnvParser,
+    out: Callable[[str], None],
+) -> tuple[list[tuple[str, dict[str, str]]] | None, int]:
+    """Read and parse each file, returning sources list or (None, error_code) on failure."""
     sources = []
-
-    for filepath in args.files:
+    for filepath in files:
         p = Path(filepath)
         if not p.exists():
             out(f"Error: file not found: {filepath}")
-            return 1
+            return None, 1
         text = p.read_text(encoding="utf-8")
         vars_dict = parser.parse(text)
         sources.append((filepath, vars_dict))
+    return sources, 0
+
+
+def _run_merge(args: argparse.Namespace, out: Callable[[str], None]) -> int:
+    parser = EnvParser()
+    chainer = EnvChainer()
+
+    sources, code = _load_sources(args.files, parser, out)
+    if sources is None:
+        return code
 
     result = chainer.chain(sources)
 
