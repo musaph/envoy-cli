@@ -1,30 +1,21 @@
-"""Normalize environment variable keys to uppercase."""
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 @dataclass
 class UppercaseChange:
-    original: str
-    normalized: str
+    original_key: str
+    new_key: str
 
     def __repr__(self) -> str:
-        return f"UppercaseChange({self.original!r} -> {self.normalized!r})"
+        return f"UppercaseChange({self.original_key!r} -> {self.new_key!r})"
 
 
 @dataclass
 class UppercaseResult:
-    vars: Dict[str, str] = field(default_factory=dict)
     changes: List[UppercaseChange] = field(default_factory=list)
-    conflicts: List[Tuple[str, str]] = field(default_factory=list)
-
-    @property
-    def has_changes(self) -> bool:
-        return bool(self.changes)
-
-    @property
-    def has_conflicts(self) -> bool:
-        return bool(self.conflicts)
+    conflicts: List[str] = field(default_factory=list)
+    vars: Dict[str, str] = field(default_factory=dict)
 
     def __repr__(self) -> str:
         return (
@@ -32,29 +23,35 @@ class UppercaseResult:
             f"conflicts={len(self.conflicts)})"
         )
 
+    @property
+    def has_changes(self) -> bool:
+        return len(self.changes) > 0
+
+    @property
+    def has_conflicts(self) -> bool:
+        return len(self.conflicts) > 0
+
 
 class EnvUppercaser:
-    """Normalizes all env var keys to uppercase, detecting key collisions."""
+    """Uppercases all keys in an env var dictionary."""
 
-    def normalize(self, vars: Dict[str, str]) -> UppercaseResult:
-        """Return a new dict with all keys uppercased.
-
-        If two keys would collide after uppercasing (e.g. 'db_host' and
-        'DB_HOST'), the conflict is recorded and the last-seen value wins.
-        """
-        result = UppercaseResult()
-        seen: Dict[str, str] = {}  # uppercase_key -> original_key
+    def uppercase(self, vars: Dict[str, str]) -> UppercaseResult:
+        result_vars: Dict[str, str] = {}
+        changes: List[UppercaseChange] = []
+        conflicts: List[str] = []
 
         for key, value in vars.items():
-            upper = key.upper()
+            upper_key = key.upper()
+            if upper_key != key:
+                if upper_key in result_vars:
+                    conflicts.append(upper_key)
+                else:
+                    changes.append(UppercaseChange(original_key=key, new_key=upper_key))
+                    result_vars[upper_key] = value
+            else:
+                if key in result_vars:
+                    conflicts.append(key)
+                else:
+                    result_vars[key] = value
 
-            if upper in seen and seen[upper] != key:
-                result.conflicts.append((seen[upper], key))
-
-            if upper != key:
-                result.changes.append(UppercaseChange(original=key, normalized=upper))
-
-            seen[upper] = key
-            result.vars[upper] = value
-
-        return result
+        return UppercaseResult(changes=changes, conflicts=conflicts, vars=result_vars)
