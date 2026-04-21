@@ -53,6 +53,16 @@ class EnvWhitelist:
         """Return only the vars whose keys are in the whitelist."""
         return {k: v for k, v in vars.items() if k in self._allowed}
 
+    def add_key(self, key: str) -> None:
+        """Add a single key to the whitelist at runtime."""
+        self._allowed.add(key)
+
+    def remove_key(self, key: str) -> None:
+        """Remove a key from the whitelist, raising KeyError if not present."""
+        if key not in self._allowed:
+            raise KeyError(f"Key {key!r} is not in the whitelist")
+        self._allowed.discard(key)
+
     @property
     def allowed_keys(self) -> List[str]:
         return sorted(self._allowed)
