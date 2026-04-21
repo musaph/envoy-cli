@@ -83,13 +83,15 @@ class TestEnvArchiveManager:
         manager.save("v1", sample_vars)
         manager.save("v2", {"X": "y"})
         data = manager.to_dict_list()
-        new_mgr = EnvArchiveManager()
-        new_mgr.load_from_dict_list(data)
+        new_mgr = EnvArchiveManager.from_dict_list(data)
+        assert len(new_mgr.list_entries()) == 2
         assert new_mgr.restore("v1") == sample_vars
         assert new_mgr.restore("v2") == {"X": "y"}
 
-    def test_multiple_labels_independent(self, manager):
-        manager.save("a", {"K": "1"})
-        manager.save("b", {"K": "2"})
-        assert manager.restore("a") == {"K": "1"}
-        assert manager.restore("b") == {"K": "2"}
+    def test_save_multiple_entries_preserves_order(self, manager):
+        """Entries should be listed in the order they were saved."""
+        manager.save("first", {"A": "1"})
+        manager.save("second", {"B": "2"})
+        manager.save("third", {"C": "3"})
+        labels = [e.label for e in manager.list_entries()]
+        assert labels == ["first", "second", "third"]
